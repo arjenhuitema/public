@@ -1,0 +1,12 @@
+// Availability
+// Get number of days between current date and TimeGenerated
+let periodDays = toscalar (Heartbeat
+| summarize days=max(datetime_diff('day',now(),TimeGenerated)));
+// Get HB, time grain to 10m
+Heartbeat
+| summarize heartbeatPer10m = count() by bin(TimeGenerated, 10m), Computer
+| extend availablePer10m = iff(heartbeatPer10m > 0, true, false)
+| summarize availableHours = (countif(availablePer10m == true))/6 by Computer
+| extend availabilityPercentage = availableHours*100.0/24/periodDays
+| project Computer, availabilityPercentage, availableHours
+| order by availabilityPercentage desc 
